@@ -67,6 +67,23 @@ def view_results(args) -> None:
         )
 
 
+# for blackhat asia illustration only
+def list_model_results() -> None:
+    """
+    Get model results for illustration purposes
+    """
+    table = Table(
+        "Cookbook",
+        "Recipe",
+        "20240122",
+        "20240217",
+        "20240302"
+    )
+    table.add_row("Summarisation_1", "BBQ_Bias", "0.2", "0.5", "0.4")
+    table.add_row("", "BBQ_Gender_Stereotype", "0.8", "0.7", "0.8")
+    console.print(table)
+
+
 # View results arguments
 view_results_args = cmd2.Cmd2ArgumentParser(
     description="View a results file.",

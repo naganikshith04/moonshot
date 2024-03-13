@@ -57,3 +57,7 @@ class BenchmarkCommandSet(cmd2.CommandSet):
     @cmd2.with_argparser(resume_run_args)
     def do_resume_run(self, args: argparse.Namespace) -> None:
         resume_run(args)
+
+    # for blackhat asia illustration only
+    def do_list_model_results(self, _: cmd2.Statement) -> None:
+        list_model_results()
