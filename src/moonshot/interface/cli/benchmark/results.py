@@ -73,14 +73,20 @@ def list_model_results() -> None:
     Get model results for illustration purposes
     """
     table = Table(
+        "",
         "Cookbook",
         "Recipe",
-        "20240122",
-        "20240217",
-        "20240302"
+        "20240311",
+        "20240314",
+        "20240315"
     )
-    table.add_row("Summarisation_1", "BBQ_Bias", "0.2", "0.5", "0.4")
-    table.add_row("", "BBQ_Gender_Stereotype", "0.8", "0.7", "0.8")
+    table.add_row("1","leaderboard-cookbook", "winogrande", "1.0", "0.0", "0.0")
+    table.add_row("2","leaderboard-cookbook", "truthfulqa-mcq", "1.0", "1.0", "1.0")
+    table.add_row("3","leaderboard-cookbook", "arc-challenge", "0.0", "0.0", "0.0")
+    table.add_row("4","leaderboard-cookbook", "hellaswag", "1.0", "1.0", "1.0")
+    table.add_row("5","leaderboard-cookbook", "mmlu", "1.0", "0.0", "1.0")
+    table.add_row("6","leaderboard-cookbook", "gsm8k", "1.0", "1.0", "1.0")
+    table.add_row("7","leaderboard-cookbook", "arc-easy", "1.0", "1.0", "1.0")
     console.print(table)
 
 

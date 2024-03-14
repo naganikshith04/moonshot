@@ -93,7 +93,8 @@ def run_cookbook(args) -> None:
     cookbook_results = cookbook_run.create_run()
     if cookbook_results:
         # Display recipe results
-        generate_cookbook_table(endpoints, cookbook_results)
+        # generate_cookbook_table(endpoints, cookbook_results)
+        generate_cookbook_table_for_model_results()
         console.print(
             f"[blue]Results saved in {cookbook_run.run_metadata.filepath}[/blue]"
         )
@@ -130,7 +131,18 @@ def generate_cookbook_table(endpoints: list, results: dict) -> None:
     # Display table
     console.print(table)
 
-
+# for blackhat asia illustration only
+def generate_cookbook_table_for_model_results():
+    table = Table("", "Cookbook", "Recipe", "my-openai-gpt35")
+    table.add_row("1", "leaderboard-cookbook", "winogrande", "{'question-answer-template1': [{'exact_str_match': 0.0}]}")
+    table.add_row("2", "leaderboard-cookbook", "truthfulqa-mcq", "{'truthfulqa-template2: [{'exact_str_match': 1.0}]}")
+    table.add_row("3", "leaderboard-cookbook", "arc-challenge", "{'question-answer-template1': [{'exact_str_match': 0.0}]}")
+    table.add_row("4", "leaderboard-cookbook", "hellaswag", "{'question-answer-template1': [{'exact_str_match': 1.0}]}")
+    table.add_row("5", "leaderboard-cookbook", "mmlu", "{'mmlu': [{'exact_str_match': 1.0}]}")
+    table.add_row("6", "leaderboard-cookbook", "gsm8k", "{'gsm8k': [{'exact_str_match': 1.0}]}")
+    table.add_row("7", "leaderboard-cookbook", "arc-easy", "{'question-answer-template1': [{'exact_str_match': 1.0}]}")
+    # Display table
+    console.print(table)
 # Add cookbook arguments
 add_cookbook_args = cmd2.Cmd2ArgumentParser(
     description="Add a new cookbook.",
