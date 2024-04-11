@@ -1,9 +1,14 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class AttackModuleArguments(BaseModel):
     # name of the attack module
     name: str
+
+    # id of the recipe used
+    recipe_id: str
 
     # list of Connector instance to connect to the endpoints specified in the Recipe
     connector_instances: list
@@ -22,6 +27,9 @@ class AttackModuleArguments(BaseModel):
 
     # list of context strategy instance to be used (if any)
     context_strategies: list = []
+
+    # DBAccessor for the attack module to access DB data
+    db_instance: Any
 
     # a dict that contains other params that is required by the attack module (if any)
     params: dict = {}
