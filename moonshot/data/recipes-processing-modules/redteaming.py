@@ -116,12 +116,14 @@ class RedTeaming:
                 # prepare attack module arguments
                 am_arguments = AttackModuleArguments(
                     name=attack_module_name,
+                    recipe_id=recipe_inst.id,
                     connector_instances=recipe_eps,
                     stop_strategy_instances=stop_strategy_insts,
                     datasets=self.recipe_instance.datasets,
                     prompt_templates=self.recipe_instance.prompt_templates,
                     metric_instances=self.metrics_instances,
                     context_strategies=context_strategy_insts,
+                    db_instance=self.database_instance,
                 )
                 loaded_attack_modules.append(AttackModule.load(am_arguments))
 
