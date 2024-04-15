@@ -143,17 +143,18 @@ class EnvironmentVars:
                 given_path = Path(env_dict[key])
                 if given_path.exists():
                     EnvironmentVars.__dict__[key][0] = str(given_path)
-                else:
-                    print(
-                        f"Unable to set {key}. The provided path {given_path} does not exist. ",
-                        "The stock set will be used.",
-                    )
+                # else:
+                #     print(
+                #         f"Unable to set {key}. The provided path {given_path} does not exist. ",
+                #         "The stock set will be used.",
+                #     )
             else:
                 unset_keys.append(key)
         if unset_keys:
-            print(
-                f"Unable to retrieve the following environment variables: {unset_keys}. The stock set will be used."
-            )
+            # print(
+            #     f"Unable to retrieve the following environment variables: {unset_keys}. The stock set will be used."
+            # )
+            pass
 
     @staticmethod
     def get_file_path(file_type: str, file_name: str, ignore_existance: bool) -> str:

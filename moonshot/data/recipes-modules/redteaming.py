@@ -148,4 +148,4 @@ class RedTeaming:
             )
             responses_from_attack_module.append(attack_module_response)
 
-        return {"responses_from_att_modules": responses_from_attack_module}
+        return {}

@@ -70,6 +70,47 @@ def get_all_recipes_name(recipe_service: RecipeService = Depends(Provide[Contain
             raise HTTPException(status_code=500, detail=f"Failed to retrieve recipes name: {e.msg}")       
                          
 
+
+@router.get("/v1/recipes/redteaming/name")
+@inject
+def get_all_red_teaming_recipes_name(recipe_service: RecipeService = Depends(Provide[Container.recipe_service])
+    ):
+    """
+    Get all the red teaming recipes name from the database
+    """
+    try:
+        recipes = recipe_service.get_all_redteaming_recipes_name()
+        return recipes
+    except ServiceException as e:
+        if e.error_code == "FileNotFound":
+            raise HTTPException(status_code=404, detail=f"Failed to retrieve recipes name: {e.msg}")
+        elif e.error_code == "ValidationError":
+            raise HTTPException(status_code=400, detail=f"Failed to retrieve recipes name: {e.msg}")
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve recipes name: {e.msg}")       
+
+
+@router.get("/v1/recipes/benchmarking/name")
+@inject
+def get_all_benchmarking_recipes_name(recipe_service: RecipeService = Depends(Provide[Container.recipe_service])
+    ):
+    """
+    Get all the benchmarking recipes name from the database
+    """
+    try:
+        recipes = recipe_service.get_all_benchmarking_recipes_name()
+        return recipes
+    except ServiceException as e:
+        if e.error_code == "FileNotFound":
+            raise HTTPException(status_code=404, detail=f"Failed to retrieve recipes name: {e.msg}")
+        elif e.error_code == "ValidationError":
+            raise HTTPException(status_code=400, detail=f"Failed to retrieve recipes name: {e.msg}")
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve recipes name: {e.msg}")       
+
+
+
+
 @router.get("/v1/recipes/{recipe_id}")
 @inject 
 def get_recipe_by_id(

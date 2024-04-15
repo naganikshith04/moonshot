@@ -21,8 +21,7 @@ class BenchmarkResultService(BaseService):
 
     @exception_handler
     def get_result_by_id(self, result_id: str) -> BenchmarkResult | None:
-        result = moonshot_api.api_read_result(result_id)
-        return transform_web_format(result)
+        return moonshot_api.api_read_result(result_id)
     
 
     @exception_handler

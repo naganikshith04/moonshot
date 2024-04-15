@@ -33,6 +33,15 @@ class RecipeService(BaseService):
         recipes = moonshot_api.api_get_all_recipe_name()
         return recipes
 
+    @exception_handler
+    def get_all_redteaming_recipes_name(self) -> list[str]:
+        recipes = moonshot_api.api_get_all_redteaming_recipe_name()
+        return recipes
+
+    @exception_handler
+    def get_all_benchmarking_recipes_name(self) -> list[str]:
+        recipes = moonshot_api.api_get_all_benchmarking_recipe_name()
+        return recipes
 
     @exception_handler
     def get_recipe_by_id(self, recipe_id: str) -> RecipeResponseDTO | None: 

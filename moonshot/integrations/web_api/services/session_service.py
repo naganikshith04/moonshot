@@ -21,7 +21,7 @@ class SessionService(BaseService):
 
         return SessionMetadataModel(
             session_id=new_session.metadata.session_id,
-            name=new_session.metadata.  name,
+            name=new_session.metadata.name,
             description=new_session.metadata.description,
             created_epoch=new_session.metadata.created_epoch,
             created_datetime=new_session.metadata.created_datetime,

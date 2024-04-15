@@ -1,10 +1,9 @@
-import glob
 from pathlib import Path
 
-from moonshot.src.configs.env_variables import EnvironmentVars
+from moonshot.src.configs.env_variables import EnvVariables
 from moonshot.src.redteaming.session.chat import Chat
 from moonshot.src.redteaming.session.session import Session, SessionMetadata
-
+from moonshot.src.storage.storage import Storage
 
 class SessionManager:
     def __init__(self):
@@ -35,9 +34,10 @@ class SessionManager:
         Returns:
             Session
         """
-        return Session(
+        created_session = Session(
             name, description, endpoints, "", prompt_template, context_strategy
         )
+        return created_session
 
     @staticmethod
     def get_session_chats_by_session_id(session_id: str) -> list[Chat]:
@@ -86,12 +86,10 @@ class SessionManager:
             list: A list of strings, each representing the name of a session
             file found in the session database directory.
         """
-        session_file_path = f"{EnvironmentVars.SESSIONS}"
-        filepaths = [
-            Path(fp).stem
-            for fp in glob.iglob(f"{session_file_path}/*.db")
-            if "__" not in fp
-        ]
+        filepaths = []
+        session_data_db_files = Storage.get_objects(EnvVariables.SESSIONS.name, "db")
+        for session_data in session_data_db_files:
+            filepaths.append(Path(session_data).stem)
         return filepaths
 
     @staticmethod
