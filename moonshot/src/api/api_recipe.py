@@ -165,3 +165,59 @@ def api_get_all_recipe_name() -> list[str]:
     """
     recipes_names, _ = Recipe.get_available_items()
     return recipes_names
+
+
+def api_get_all_redteaming_recipe() -> list[dict]:
+    """
+    Retrieves all available recipes for red teaming.
+
+    This function calls the api_get_all_redteaming_recipe method to retrieve all available red teaming recipes.
+    It then converts each recipe into a dictionary using the to_dict method and returns a list of these dictionaries.
+
+    Returns:
+        list[dict]: A list of dictionaries, each representing a red teaming recipe.
+    """
+    _, recipes = Recipe.get_available_items_by_type("redteaming")
+    return [recipe.to_dict() for recipe in recipes]
+
+
+def api_get_all_benchmarking_recipe() -> list[dict]:
+    """
+    Retrieves all available recipes for benchmarking.
+
+    This function calls the api_get_all_benchmarking_recipe method to retrieve all available benchmarking recipes.
+    It then converts each recipe into a dictionary using the to_dict method and returns a list of these dictionaries.
+
+    Returns:
+        list[dict]: A list of dictionaries, each representing a red teaming recipe.
+    """
+    _, recipes = Recipe.get_available_items_by_type("benchmarking")
+    return [recipe.to_dict() for recipe in recipes]
+
+
+def api_get_all_redteaming_recipe_name() -> list[str]:
+    """
+    Retrieves all available red teaming recipe names.
+
+    This function calls the api_get_all_redteaming_recipe_name method to retrieve all available red teaming recipes.
+    It then extracts the names of each recipe and returns a list of these names.
+
+    Returns:
+        list[str]: A list of strings, each representing a red teaming recipe name.
+    """
+    recipes_names, _ = Recipe.get_available_items_by_type("redteaming")
+    return recipes_names
+
+
+def api_get_all_benchmarking_recipe_name() -> list[str]:
+    """
+    Retrieves all available benchmarking names.
+
+    This function calls the api_get_all_benchmarking_recipe_name method to retrieve all available benchmarking recipes.
+    It then extracts the names of each recipe and returns a list of these names.
+
+    Returns:
+        list[str]: A list of strings, each representing a benchmarking recipe name.
+    """
+    recipes_names, _ = Recipe.get_available_items_by_type("benchmarking")
+    return recipes_names

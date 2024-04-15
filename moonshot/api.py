@@ -33,8 +33,12 @@ from moonshot.src.api.api_prompt_template import (
 from moonshot.src.api.api_recipe import (
     api_create_recipe,
     api_delete_recipe,
+    api_get_all_benchmarking_recipe,
+    api_get_all_benchmarking_recipe_name,
     api_get_all_recipe,
     api_get_all_recipe_name,
+    api_get_all_redteaming_recipe,
+    api_get_all_redteaming_recipe_name,
     api_read_recipe,
     api_read_recipes,
     api_update_recipe,
@@ -129,4 +133,8 @@ __all__ = [
     "api_send_prompt",
     "api_update_context_strategy",
     "api_update_prompt_template",
+    "api_get_all_redteaming_recipe",
+    "api_get_all_benchmarking_recipe",
+    "api_get_all_redteaming_recipe_name",
+    "api_get_all_benchmarking_recipe_name",
 ]

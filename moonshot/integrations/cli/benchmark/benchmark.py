@@ -20,7 +20,11 @@ from moonshot.integrations.cli.benchmark.recipe import (
     add_recipe_args,
     delete_recipe,
     delete_recipe_args,
+    list_benchmarking_recipe_names,
+    list_benchmarking_recipes,
     list_recipes,
+    list_red_teaming_recipes,
+    list_redteaming_recipe_names,
     run_recipe,
     run_recipe_args,
     update_recipe,
@@ -67,6 +71,18 @@ class BenchmarkCommandSet(cmd2.CommandSet):
 
     def do_list_recipes(self, _: cmd2.Statement) -> None:
         list_recipes()
+
+    def do_list_benchmarking_recipe_names(self, _: cmd2.Statement) -> None:
+        list_benchmarking_recipe_names()
+
+    def do_list_redteaming_recipe_names(self, _: cmd2.Statement) -> None:
+        list_redteaming_recipe_names()
+
+    def do_list_benchmarking_recipes(self, _: cmd2.Statement) -> None:
+        list_benchmarking_recipes()
+
+    def do_list_redteaming_recipes(self, _: cmd2.Statement) -> None:
+        list_red_teaming_recipes()
 
     def do_list_report_analyses(self, _: cmd2.Statement) -> None:
         list_report_analyses()

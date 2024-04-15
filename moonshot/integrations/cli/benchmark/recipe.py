@@ -9,7 +9,11 @@ from moonshot.api import (
     api_create_recipe,
     api_create_recipe_runner,
     api_delete_recipe,
+    api_get_all_benchmarking_recipe,
+    api_get_all_benchmarking_recipe_name,
     api_get_all_recipe,
+    api_get_all_redteaming_recipe,
+    api_get_all_redteaming_recipe_name,
     api_read_recipe,
     api_update_recipe,
 )
@@ -352,10 +356,56 @@ def generate_recipe_table(recipes: list, endpoints: list, results: dict) -> None
     console.print(table)
 
 
+def list_red_teaming_recipes() -> None:
+    """
+    List all available recipes.
+
+    This function retrieves all available recipes by calling the api_get_all_recipe function from the
+    moonshot.api module.
+    It then displays the retrieved recipes using the display_recipes function.
+
+    Returns:
+        None
+    """
+    try:
+        recipes_list = api_get_all_redteaming_recipe()
+        display_recipes(recipes_list)
+    except Exception as e:
+        print(f"[list_recipes]: {str(e)}")
+
+
+def list_benchmarking_recipes() -> None:
+    """
+    List all available recipes.
+
+    This function retrieves all available recipes by calling the api_get_all_recipe function from the
+    moonshot.api module.
+    It then displays the retrieved recipes using the display_recipes function.
+
+    Returns:
+        None
+    """
+    try:
+        recipes_list = api_get_all_benchmarking_recipe()
+        display_recipes(recipes_list)
+    except Exception as e:
+        print(f"[list_recipes]: {str(e)}")
+
+
+def list_benchmarking_recipe_names() -> None:
+    print(api_get_all_benchmarking_recipe_name())
+
+
+def list_redteaming_recipe_names() -> None:
+    print(api_get_all_redteaming_recipe_name())
+
+
 # ------------------------------------------------------------------------------
 # Cmd2 Arguments Parsers
 # ------------------------------------------------------------------------------
 # Add recipe arguments
+
+
 add_recipe_args = cmd2.Cmd2ArgumentParser(
     description="Add a new recipe.",
     epilog="Example:\n add_recipe 'My new recipe' "

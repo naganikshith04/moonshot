@@ -7,6 +7,7 @@ from slugify import slugify
 
 from moonshot.src.configs.env_variables import EnvVariables
 from moonshot.src.recipes.recipe_arguments import RecipeArguments
+from moonshot.src.recipes.recipe_type import RecipeType
 from moonshot.src.storage.storage import Storage
 
 
@@ -193,6 +194,56 @@ class Recipe:
                 retn_recs.append(rec_info)
                 retn_recs_ids.append(rec_info.id)
 
+            return retn_recs_ids, retn_recs
+
+        except Exception as e:
+            print(f"Failed to get available recipes: {str(e)}")
+            raise e
+
+    @staticmethod
+    def get_available_items_by_type(
+        recipe_type: str,
+    ) -> tuple[list[str], list[RecipeArguments]]:
+        """
+        Fetches all available recipes.
+
+        This method scans the directory defined by `EnvironmentVars.RECIPES` and collects all stored recipe files.
+        It excludes any files that contain "__" in their names. For each valid recipe file, the method reads the file
+        content and creates a RecipeArguments object encapsulating the recipe's details.
+        Both the RecipeArguments object and the recipe ID are then appended to their respective lists.
+
+        Returns:
+            tuple[list[str], list[RecipeArguments]]: A tuple where the first element is a list of recipe IDs and
+            the second element is a list of RecipeArguments objects representing the details of each recipe.
+
+        Raises:
+            Exception: If an error is encountered during the file reading process or any other operation within
+            the method.
+        """
+        try:
+            retn_recs = []
+            retn_recs_ids = []
+            # if recipe_inst.type is RecipeType.BENCHMARK
+            recs = Storage.get_objects(EnvVariables.RECIPES.name, "json")
+            for rec in recs:
+                if "__" in rec:
+                    continue
+
+                rec_info = RecipeArguments(
+                    **Storage.read_object(
+                        EnvVariables.RECIPES.name, Path(rec).stem, "json"
+                    )
+                )
+                if recipe_type == "benchmarking":
+                    if rec_info.type is RecipeType.BENCHMARK:
+                        retn_recs.append(rec_info)
+                        retn_recs_ids.append(rec_info.id)
+                elif recipe_type == "redteaming":
+                    if rec_info.type is RecipeType.REDTEAM:
+                        retn_recs.append(rec_info)
+                        retn_recs_ids.append(rec_info.id)
+                else:
+                    continue
             return retn_recs_ids, retn_recs
 
         except Exception as e:
