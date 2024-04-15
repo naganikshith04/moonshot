@@ -5,30 +5,14 @@ sys.path.insert(0, '../')
 import requests
 
 from moonshot.api import (
-    api_create_recipe,
-    api_create_cookbook,
-    api_create_endpoint,
-    # api_create_recipe_executor,
-    # api_create_cookbook_executor,
-    api_create_session,
-    api_get_session,
-    api_get_all_connector_type,
-    api_get_all_endpoint,
-    api_get_all_cookbook,
-    api_get_all_recipe,
-    # api_get_all_executor,
-    api_get_all_session_detail,
-    api_get_all_prompt_template_detail,
-    api_get_all_context_strategy_name,
-    api_get_session_chats_by_session_id,
-    # api_load_executor,
     api_set_environment_variables,
-    api_send_prompt,
-    api_update_context_strategy,
-    api_update_prompt_template,
 )
 
+### 'Global' Variables
+url = ""
 moonshot_path = "../moonshot/data/"
+st.set_page_config(layout="wide")
+
 
 env = {
     "CONNECTORS_ENDPOINTS": os.path.join(moonshot_path, "connectors-endpoints"),
@@ -47,14 +31,12 @@ env = {
 
 api_set_environment_variables(env)
 
-
 ######## UTIL FUNCTIONS #########
 def list_endpoints():
     """Get a list of endpoint and returns the ID
     as a list
     """
     results = []
-    url = st.session_state["moonshot_fastapi"]
     try:
         response = requests.get(f"{url}/v1/llm_endpoints/")
         get_endpoints = response.json()
@@ -66,28 +48,10 @@ def list_endpoints():
         st.warning("Moonshot WebAPI is not connected.", icon="🔥")
         return results
 
-def list_cookbook():
-    """Get a list of cookbooks and returns the ID
-    as a list
-    """
-    results = []
-    # get all cookbook
-    url = st.session_state["moonshot_fastapi"]
-    try:
-        response = requests.get(f"{url}/v1/cookbooks/")
-        get_cookbooks = response.json()
-        for cookbook in get_cookbooks:
-            results.append(cookbook["id"])
-        return results
-    except Exception:
-        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
-        return results
-
 def list_results(cookbook_ids):
-    """Get a list of benchmark results and return its ID and endpoints as a pair
+    """Get a list of benchmark results and return as a dict
     """
     results = {}
-    url = st.session_state["moonshot_fastapi"]
     try:
         response = requests.get(f"{url}/v1/results")
         get_results = response.json()
@@ -105,12 +69,9 @@ def list_results(cookbook_ids):
         return results
 
 def list_sessions():
-    """Get a list of sessions and returns the ID
-    as a list
+    """Get a list of active sessions and returns the ID as a list
     """
     results = []
-    # get all cookbook
-    url = st.session_state["moonshot_fastapi"]
     try:
         response = requests.get(f"{url}/v1/sessions/")
         get_sessions = response.json()
@@ -121,6 +82,31 @@ def list_sessions():
         st.warning("Moonshot WebAPI is not connected.", icon="🔥")
         return results
     
+def list_cookbook():
+    """Get a list of cookbooks and returns the ID as a list
+    """
+    results = []
+    try:
+        response = requests.get(f"{url}/v1/cookbooks/")
+        get_cookbooks = response.json()
+        for cookbook in get_cookbooks:
+            results.append(cookbook["id"])
+        return results
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return results
+
+def list_redteaming_recipes():
+    """Get a list of recipes for red teaming and returns the ID as a list"""
+    results = []
+    try:
+        response = requests.get(f"{url}/v1/recipes/redteaming/name")
+        redteaming_recipes = response.json()
+        return redteaming_recipes
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return results
+
 def get_session_info(session_id, get_history=False):
     try:
         url = st.session_state["moonshot_fastapi"]
@@ -156,13 +142,16 @@ def get_benchmark_results(cookbook_ids=None, limit=3):
     
     selected_session = st.session_state["selected_session"]
     if selected_session == None or len(selected_session) == 0:
-        st.warning("No session is activated.")
+        st.warning("No session is activated.", icon="🔥")
         return
     
     session = get_session_info(selected_session)
     selected_endpoints = session["session"]["endpoints"]
 
     total_match = 0
+
+    # key = flatten(cookbook_name, recipe_id, dataset_id, prompt_template_id)
+    # value = [model, real results]
 
     ### The ridiculous number of for loops required to get to metrics
     for id in results:
@@ -182,25 +171,31 @@ def get_benchmark_results(cookbook_ids=None, limit=3):
                         for model in recipe["models"]:
                             model_id = model["id"]
                             for dataset in model["datasets"]:
+                                dataset_id = dataset["id"]
                                 for prompt_template in dataset["prompt_templates"]:
                                     real_results = prompt_template["metrics"]
+                                    prompt_template_id = prompt_template["id"]
                                     if cookbook_id in final_results:
-                                        final_results[cookbook_id].append((cookbook_name, 
-                                                                            recipe_id, 
-                                                                            real_results, 
-                                                                            model_id))
+                                        key = f"{cookbook_id}, {cookbook_name}, {recipe_id}, {dataset_id}, {prompt_template_id}"
+
+                                        if key in final_results[cookbook_id].keys():
+                                            final_results[cookbook_id][key].append((model_id, real_results))
+                                        else:
+                                            final_results[cookbook_id][key] = [(model_id, real_results)]
+                                        
                                     else:
-                                        print("adding {0} {1} {2}".format(cookbook_name, recipe_id, model_id))
-                                        final_results[cookbook_id] = [(cookbook_name, 
-                                                                        recipe_id, 
-                                                                        real_results, 
-                                                                        model_id)]
+                                        key = f"{cookbook_id}, {cookbook_name}, {recipe_id}, {dataset_id}, {prompt_template_id}"
+
+                                        # Create the cookbook
+                                        final_results[cookbook_id] = {}
+                                        final_results[cookbook_id][key] = [(model_id, real_results)]
+
                 total_match += 1
 
                 if total_match >= limit:
-                    return final_results
+                    return [final_results, selected_endpoints]
 
-    return final_results
+    return [final_results, selected_endpoints]
 
 def get_chat_history():
     """Get history for all the chats"""
@@ -225,7 +220,7 @@ def get_chat_history():
         st.warning(f"Unable to get execution id {e}")
         return False
 
-def print_benchmark_results(cookbook_id, results):
+def print_benchmark_results(cookbook_id, results_endpoint):
     exec_info = get_exec_info_by_id(cookbook_id).json()
     result_name = os.path.join(env["RESULTS"], exec_info["metadata"]["id"] + ".json")
     
@@ -233,7 +228,6 @@ def print_benchmark_results(cookbook_id, results):
         data = json.load(f)
 
     cookbooks = {}
-    metrics_str = []
     start_time = data["metadata"]["start_time"]
     end_time = data["metadata"]["end_time"]
     duration = data["metadata"]["duration"]
@@ -245,29 +239,47 @@ def print_benchmark_results(cookbook_id, results):
     st.markdown(metadata_table)
     st.divider()
     
-    table_columns = []
     table_column = ""
 
+    # get the selected endpoints
+    results = results_endpoint[0]
+    selected_endpoints = results_endpoint[1]
     for result in results:
-        cookbook = result[0]
+        cookbook = result.split(",")[1]
 
         if cookbook not in cookbooks.keys():
-            cookbooks[cookbook] = [[result[1], result[2], result[3]]]
+            cookbooks[cookbook] = [(result, results[result])]
         else:
-            cookbooks[cookbook].append([result[1], result[2], result[3]])
-    
+            cookbooks[cookbook].append((result, results[result]))
+
     for cookbook in cookbooks:  
         # create a new table
         st.markdown(f"### {cookbook}")
-        table_column = "| Endpoint | Recipe  | Metrics |"
-        table_column += "\n| :------------| :------------ | :------------ |"    
+        endpoints_str = " | ".join(x for x in selected_endpoints)
+        table_column = f"|  &nbsp; | {endpoints_str}"
+
+        total_number_of_divider = len(selected_endpoints) + 1 
+        table_column += "\n|"
+        for i in range(total_number_of_divider):
+            table_column += " :------------| "    
         
-        for r in cookbooks[cookbook]:    
-            if len(r) == 3:
-                model_id = r[2]
-                recipe_name = r[0]
-                metrics = r[1]
-                table_column += "\n| {0} | {1} | {2} |".format(model_id, recipe_name, metrics)
+        table_column += "\n| **Recipe**  | &nbsp; | &nbsp; | "
+        
+        for each_combination in cookbooks[cookbook]:
+            name = ", ".join(each_combination[0].split(",")[2:3])
+            metrics = each_combination[1]
+
+            metric_str = "|"
+            for metric in metrics:
+                real_metric = metric[1][0] ### hard-codedfor now, but we should discus show to proceed
+
+                print(real_metric)
+                for metric_name in real_metric:
+                    metric_str += f" {metric_name}: {real_metric[metric_name]} | "
+                    break # skipping other metrics, only use the first one
+            
+            table_column += "\n| {0} {1}".format(name, metric_str)
+
         st.markdown(table_column, unsafe_allow_html=True)
         st.divider()
         
@@ -280,12 +292,11 @@ def print_benchmark_results(cookbook_id, results):
 def send_prompt():
     selected_session = st.session_state["selected_session"]
     if selected_session == None or len(selected_session) == 0:
-        st.warning("No session is activated.")
+        st.warning("No session is activated.", icon="🔥")
         return
     
     # get the number of chat ID in this session
     session = get_session_info(selected_session)
-    chat_ids = session["session"]["chat_ids"]
     prompt = st.session_state["main_prompt"]
 
     if session == None:
@@ -310,21 +321,106 @@ def send_prompt():
             return False
 
 ############ On Change Function ############
-def create_message_box(cookbook_exec_id=None):
+def run_automated_attack():
+    selected_session = st.session_state["selected_session"]
+    selected_attack_module = st.session_state["selected_attack_modules"]
+
+    if selected_session == None or len(selected_session) == 0:
+        st.warning("No session is activated.", icon="🔥")
+        return
+
+    if len(selected_attack_module) == 0:
+        st.warning("Unable to run. No cookbook is selected.", icon="🔥")
+        return
+    
+    # Get the Chat IDs and Create the tabs accordingly
+    session = get_session_info(selected_session)
+    selected_endpoints = session["session"]["endpoints"]
+
+    chat_ids = session["session"]["chat_ids"]
+    tabs = st.tabs(chat_ids)
+
+    # Before running the attack modules, we will get the history first
+    # Get History (to update the stream)
+    index = 0
+    history = get_chat_history()
+
+    for tab in tabs:
+        with tab:
+            # get chat history
+            chat_history = history[chat_ids[index]]
+            for each_turn in chat_history:
+                st.chat_message("assistant").write(each_turn[0])
+                st.chat_message("user").write(each_turn[1])
+
+        index += 1
+    
+    # Prepare to run the attack modules
+    endpoints = selected_endpoints
+    num_of_prompts = 1
+
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+
+    payload = {
+        "name": timestr,
+        "recipes": selected_attack_module,
+        "endpoints": endpoints,
+        "num_of_prompts": num_of_prompts
+    }
+
+    results = []
+
+    try:
+        response = requests.post(f"{url}/v1/benchmarks?type=recipe",
+                                 json=payload)
+        recipe_exec_id = response.json()["id"]
+
+        complete = False
+        
+        while not complete:
+            response = requests.get(f"{url}/v1/benchmarks/status")
+            print(response.json())
+            return
+            status = response.json()[recipe_exec_id]
+            curr_progress = status["curr_progress"]
+            error = status["curr_error_messages"]
+
+            if int(curr_progress) == 100:
+                complete = True
+                st.info(f"We have completed {selected_attack_module}", icon="🥳")
+
+                if error:
+                    st.warning(error)
+            else:
+                # can I retrieve the partial results here?
+                time.sleep(2)
+
+    except Exception as e:
+        st.warning(e)
+
+    # Sleep
+    time.sleep(1)
+
+    
+            
+    st.chat_input("Type a message here...", key="main_prompt", on_submit=send_prompt)
+
+def view_results(cookbook_exec_id=None):
     """create container based on the endpoints selected
     from the sidebar
     """
     selected_session = st.session_state["selected_session"]
     if selected_session == None or len(selected_session) == 0:
-        st.warning("No session is activated.")
+        st.warning("No session is activated.", icon="🔥")
         return
     
     # get the number of chat ID in this session
     session = get_session_info(selected_session)
     selected_endpoints = session["session"]["endpoints"]
     
-    st.header(f"Session {selected_session}", divider="rainbow")
-    final_results = get_benchmark_results(cookbook_exec_id)
+    st.header(f"Session Name: {selected_session}", divider="rainbow")
+    results = get_benchmark_results(cookbook_exec_id)
+    final_results = results[0]
 
     # Create a table here to show the results of the static tests
     tabs = []
@@ -333,17 +429,18 @@ def create_message_box(cookbook_exec_id=None):
             tabs.append(key)
     
     selected_endpoints_str = ", ".join(x for x in selected_endpoints)
-    st.markdown(f"##### Past Results for endpoint: *{selected_endpoints_str}*")
+    st.button("Resume Red Teaming", on_click=start_red_teaming)
     
+    st.markdown(f"##### Past Results for endpoint: *{selected_endpoints_str}*")
     if len(tabs) > 0:
         created_tabs = st.tabs(tabs)
 
         tab_index = 0
         for tab in created_tabs:
-            results = final_results[tabs[tab_index]]
+            this_result = final_results[tabs[tab_index]]
 
             with tab:
-                print_benchmark_results(tabs[tab_index], results)
+                print_benchmark_results(tabs[tab_index], [this_result, results[1]])
 
             tab_index += 1
     else:
@@ -355,7 +452,7 @@ def start_red_teaming():
     """    
     selected_session = st.session_state["selected_session"]
     if selected_session == None or len(selected_session) == 0:
-        st.warning("No session is activated.")
+        st.warning("No session is activated.", icon="🔥")
         return
     
     # get the number of chat ID in this session
@@ -388,7 +485,7 @@ def run_cookbook():
     number_of_prompts = st.session_state["number_of_prompts"]
 
     if selected_session == None or len(selected_session) == 0:
-        st.warning("Unable to run. No endpoint is selected.", icon="🔥")
+        st.warning("No session is activated.", icon="🔥")
         return
 
     if len(selected_cookbooks) == 0:
@@ -442,7 +539,7 @@ def run_cookbook():
                 my_bar.progress(curr_progress, text="Running {0} at {1}%".format(cookbook_exec_id, curr_progress))
                 time.sleep(2)
         
-        create_message_box(cookbook_exec_id)
+        view_results(cookbook_exec_id)
 
         return results
     except Exception as e:
@@ -488,12 +585,13 @@ with st.sidebar:
     # Create a sidebar to store all the configurations
     st.title("Moonshot Lite")
 
-    tabs = st.tabs(["View", "Run", "Settings"])
+    tabs = st.tabs(["Run", "Settings"])
 
     with tabs[-1]:
         st.header("Configure Moonshot Library", divider="rainbow")
         
         st.text_input("FastAPI", key="moonshot_fastapi", value="http://127.0.0.1:5000")
+        url = st.session_state["moonshot_fastapi"]
         st.button("Save", key="save")
 
     with tabs[0]:
@@ -502,57 +600,66 @@ with st.sidebar:
             "Current Active Session",
             list_sessions(),
             index=None,
-            key="selected_session"
+            key="selected_session",
+            on_change=start_red_teaming
         )
 
-        col1, col2 = st.columns(2)
+        with st.popover("Create a new session"):
+            options = st.multiselect(
+                "Select endpoints",
+                list_endpoints(),
+                placeholder="",
+                key="selected_endpoints"
+            )
+            st.button("Create New Session", key="create_session", on_click=create_session)
 
-        button1 = col2.button("View Predefined Results", on_click=create_message_box, type="primary")
-        button2 = col1.button("Start Testing", on_click=start_red_teaming, type="primary")
-
-        st.header("Create New Session", divider='rainbow')
+        
+        st.header("Automated Red Teaming", divider='rainbow')
+        
+        redteaming_recipe = list_redteaming_recipes()
+        redteaming_recipe_str = ""
+        if len(redteaming_recipe) != 0:
+            redteaming_recipe_str = redteaming_recipe[0]
+        
         options = st.multiselect(
-            "Select endpoints",
-            list_endpoints(),
+            "Select Attack Modules",
+            redteaming_recipe,
             placeholder="",
-            key="selected_endpoints"
+            default=redteaming_recipe_str,
+            key="selected_attack_modules"
         )
+        
+        st.button("Automate Attacks", key="automate_attack", on_click=run_automated_attack)
 
-        st.button("Create New Session", type="primary", key="create_session", on_click=create_session)
-
-    with tabs[1]:
+        st.header("Predefined Tests", divider='rainbow')
+        
         session = st.session_state["selected_session"]
         endpoints = st.session_state["selected_endpoints"]
         endpoints_str = ", ".join(x for x in endpoints)
 
-        if endpoints_str == "":
-            endpoints_str = None
-
-        st.markdown(f"You are currently running tests on **{session}**")
-        st.header("Predefined Tests", divider='rainbow')
-
         # Create a multiselect dropdown box or users
         # to select cookbook to run
+        list_of_cookbooks = list_cookbook()
+        if len(list_of_cookbooks) == 0:
+            cookbook_str = ""
+        else:
+            cookbook_str = list_of_cookbooks[0]
+
         options = st.multiselect(
             "Cookbook",
-            list_cookbook(),
-            default=[list_cookbook()[0]],
+            list_of_cookbooks,
+            default=[cookbook_str],
             placeholder="Select Cookbooks",
             key="selected_cookbooks"
         )
 
         number = st.number_input('Number of prompts to run', min_value=0, value=1, key="number_of_prompts")
-        st.button("Run Predefined Test(s)", type="primary", on_click=run_cookbook)
+
+        col1, col2 = st.columns(2)
+
+        col1.button("Run Tests", on_click=run_cookbook)
+        col2.button("View Past Results", on_click=view_results)
 
         ####
-        st.header("Attack Modules", divider='rainbow')
-        # This is not available...
-        # options = st.multiselect(
-        #     "Select Attack Modules",
-        #     list_cookbook(),
-        #     placeholder="Select Cookbooks",
-        #     key="selected_cookbooks"
-        # )
-
-
+        
 container = st.container()

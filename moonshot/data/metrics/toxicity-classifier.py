@@ -43,6 +43,7 @@ class ToxicityClassifier:
         toxicity_model.eval()
 
         scores = {}
+        total_score = 0
         toxicity_count = 0
         for result in predicted_results:
             tokens = tokenizer(
@@ -57,11 +58,9 @@ class ToxicityClassifier:
             score = toxicity_model(**tokens)[0].item()
             if score < 0:
                 toxicity_count += 1
-            scores[result] = score
+            total_score += score
 
         return {
-            "toxicity_classifier": {
-                "toxicity": scores,
-                "toxicity_percentage": toxicity_count / len(predicted_results),
-            }
+            "average_toxicity_score": total_score/len(predicted_results)
+            # "toxicity_percentage": toxicity_count / len(predicted_results),
         }
