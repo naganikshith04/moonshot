@@ -1,0 +1,27 @@
+{
+    "id": "word-perturb",
+    "name": "word-perturb",
+    "description": "Description of test-rt-recipe.",
+    "tags": [
+        "redteaming"
+    ],
+    "datasets": [
+        "advglue-qnli-benign"
+    ],
+    
+    "prompt_templates": [
+        "advglue-templateqnli"
+    ],
+    "metrics": [
+        "exactstrmatch"
+],
+    "type": "redteam",
+    "attack_strategies": [
+        {
+            "attack_module": "textbugger_attack_module",
+            "stop_strategies": [
+                "sample_stop_strategy"
+            ]
+        }
+    ]
+}

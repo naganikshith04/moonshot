@@ -17,22 +17,37 @@ class SampleAttackModule(AttackModule):
         """
 
         # # gets the required LLM connectors to send the prompts to
+        print(self.connector_instances)
         target_llm_connector = next(
             (
                 conn_inst
                 for conn_inst in self.connector_instances
-                if conn_inst.id == "my-openai-gpt4"
+                if conn_inst.id == "model1"
             ),
             None,
         )
+
+        target_llm_connector2 = next(
+            (
+                conn_inst
+                for conn_inst in self.connector_instances
+                if conn_inst.id == "weakmodel"
+            ),
+            None,
+        )
+
+        print(f"target_llm_connector: {target_llm_connector}")
         toxic_llm_connector = next(
             (
                 conn_inst
                 for conn_inst in self.connector_instances
-                if conn_inst.id == "my-openai-gpt35"
+                if conn_inst.id == "toxicmodel"
             ),
             None,
         )
+
+        print(f"toxic_llm_connector: {toxic_llm_connector}")
+
 
         if target_llm_connector and toxic_llm_connector:
             print("=" * 200)
@@ -58,12 +73,23 @@ class SampleAttackModule(AttackModule):
                     f"Sending prompt [{toxic_prompt.connector_prompt.predicted_results}] -> \
                         Target LLM [{target_llm_connector.id}]"
                 )
+
+                # send to two targets
                 result = await self.send_prompt(
                     target_llm_connector,
                     toxic_prompt.connector_prompt.predicted_results,
                 )
+
+                results = await self.send_prompt(
+                    target_llm_connector2,
+                    toxic_prompt.connector_prompt.predicted_results,
+                )
+
                 print(
                     f'Response from Target LLM [{target_llm_connector.id}] -> prompt ["{result}"]'
+                )
+                print(
+                    f'Response from Target LLM #2 [{target_llm_connector.id}] -> prompt ["{results}"]'
                 )
                 if self.check_stop_condition(
                     toxic_prompt.connector_prompt.prompt,

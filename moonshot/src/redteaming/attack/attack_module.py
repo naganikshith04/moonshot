@@ -17,8 +17,7 @@ from moonshot.src.utils.import_modules import get_instance
 
 # variable to cap the number of prompts sent to the LLMs in case the stop condition
 # of the attack does not get fulfilled
-MAX_NO_ITERATIONS = 5
-
+MAX_NO_ITERATIONS = 10
 
 class AttackModule:
     def __init__(self, am_args: AttackModuleArguments):
@@ -359,13 +358,15 @@ class AttackModule:
                 "\n",
             )
 
+            yield new_prompt_info
+
             # hit max no. of default iterations
             if iteration_count >= self.get_max_no_iterations():
                 print("Stopping red teaming as maximum number of iteration is hit.")
                 break
             iteration_count += 1
 
-            yield new_prompt_info
+            
 
 
 class PromptArguments(BaseModel):

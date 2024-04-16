@@ -1,7 +1,7 @@
 {
-    "id": "test-rt-recipe",
-    "name": "test-rt-recipe",
-    "description": "Description of test-rt-recipe.",
+    "id": "auto-topic-generator",
+    "name": "auto-topic-generator",
+    "description": "topic-generator",
     "tags": [
         "redteaming"
     ],
@@ -10,8 +10,7 @@
     ],
     
     "prompt_templates": [
-        "test-rt-pt",
-        "auto-categorisation"
+        "test-rt-pt"
     ],
     "metrics": [
         "exactstrmatch"

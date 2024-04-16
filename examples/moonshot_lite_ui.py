@@ -148,6 +148,8 @@ def get_benchmark_results(cookbook_ids=None, limit=3):
     session = get_session_info(selected_session)
     selected_endpoints = session["session"]["endpoints"]
 
+    
+
     total_match = 0
 
     # key = flatten(cookbook_name, recipe_id, dataset_id, prompt_template_id)
@@ -170,6 +172,11 @@ def get_benchmark_results(cookbook_ids=None, limit=3):
 
                         for model in recipe["models"]:
                             model_id = model["id"]
+
+                            #hack
+                            if "toxic" in model_id:
+                                continue
+                        
                             for dataset in model["datasets"]:
                                 dataset_id = dataset["id"]
                                 for prompt_template in dataset["prompt_templates"]:
@@ -244,6 +251,10 @@ def print_benchmark_results(cookbook_id, results_endpoint):
     # get the selected endpoints
     results = results_endpoint[0]
     selected_endpoints = results_endpoint[1]
+
+    if "toxic" in selected_endpoints[-1]:
+        selected_endpoints = selected_endpoints[:-1]
+
     for result in results:
         cookbook = result.split(",")[1]
 
@@ -273,7 +284,6 @@ def print_benchmark_results(cookbook_id, results_endpoint):
             for metric in metrics:
                 real_metric = metric[1][0] ### hard-codedfor now, but we should discus show to proceed
 
-                print(real_metric)
                 for metric_name in real_metric:
                     metric_str += f" {metric_name}: {real_metric[metric_name]} | "
                     break # skipping other metrics, only use the first one
@@ -338,26 +348,43 @@ def run_automated_attack():
     selected_endpoints = session["session"]["endpoints"]
 
     chat_ids = session["session"]["chat_ids"]
-    tabs = st.tabs(chat_ids)
+    # tabs = st.tabs(chat_ids)
 
     # Before running the attack modules, we will get the history first
     # Get History (to update the stream)
     index = 0
     history = get_chat_history()
 
-    for tab in tabs:
-        with tab:
-            # get chat history
+    # this is a hack for the toxic llm
+    if "toxic" in chat_ids[-1]:
+        cols = st.columns(len(chat_ids)-1)
+    else:
+        cols = st.columns(len(chat_ids))
+
+    for col in cols:
+        with col:
+            st.subheader(f"Chat: {chat_ids[index]}", divider="rainbow")
+
             chat_history = history[chat_ids[index]]
             for each_turn in chat_history:
                 st.chat_message("assistant").write(each_turn[0])
                 st.chat_message("user").write(each_turn[1])
-
+        
         index += 1
+    
+    # for tab in tabs:
+    #     with tab:
+    #         # get chat history
+    #         chat_history = history[chat_ids[index]]
+    #         for each_turn in chat_history:
+    #             st.chat_message("assistant").write(each_turn[0])
+    #             st.chat_message("user").write(each_turn[1])
+
+    #     index += 1
     
     # Prepare to run the attack modules
     endpoints = selected_endpoints
-    num_of_prompts = 1
+    num_of_prompts = 5 # limit for now
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
 
@@ -376,32 +403,72 @@ def run_automated_attack():
         recipe_exec_id = response.json()["id"]
 
         complete = False
-        
+
+        loaded_conversations = []
+
+        # hack for toxic model
+        if "toxic" in endpoints[-1]:
+            for i in range(len(endpoints)-1):
+                loaded_conversations.append([-1])
+        else:
+            for i in range(len(endpoints)):
+                loaded_conversations.append([-1])
+
         while not complete:
             response = requests.get(f"{url}/v1/benchmarks/status")
-            print(response.json())
-            return
             status = response.json()[recipe_exec_id]
             curr_progress = status["curr_progress"]
             error = status["curr_error_messages"]
 
             if int(curr_progress) == 100:
                 complete = True
-                st.info(f"We have completed {selected_attack_module}", icon="🥳")
-
+    
                 if error:
-                    st.warning(error)
+                    st.warning("error: {0}".format(error))
+
+                # generate the prompts one by one
+
+                DATABASE = os.path.join(env["DATABASES"], f"{recipe_exec_id}.db")
+                import sqlite3
+                con = sqlite3.connect(DATABASE)
+                cur = con.cursor()
+
+                endpoint_index = 0
+                
+                if "toxic" in chat_ids[-1]:
+                    cols = st.columns(len(chat_ids)-1)
+                else:
+                    cols = st.columns(len(chat_ids))
+
+
+                # select the count using the first endpoint
+                cur.execute(f'SELECT COUNT(*) FROM {endpoints[0]}')
+                row_count = cur.fetchone()[0]
+
+                # show one prompt by one prompt
+                for i in range(row_count+1):
+                    endpoint_index = 0
+                    for col in cols:
+                        with col:
+                            for row in cur.execute(f'SELECT * FROM {endpoints[endpoint_index]} where id={i};'):
+                                st.chat_message("assistant").write(row[5])
+                                time.sleep(1) # feel some lag time
+                                st.chat_message("user").write(row[6])
+                                time.sleep(1) # feel some lag time
+                
+                        endpoint_index += 1
+
+                st.info(f"We have completed {selected_attack_module}", icon="🥳")
             else:
-                # can I retrieve the partial results here?
-                time.sleep(2)
+                with st.spinner(f"Generating new prompts with this automated module... {recipe_exec_id}..."):
+                    time.sleep(3)
+                
+
 
     except Exception as e:
-        st.warning(e)
-
-    # Sleep
-    time.sleep(1)
-
-    
+        import traceback
+        traceback.print_exc()
+        print(e)
             
     st.chat_input("Type a message here...", key="main_prompt", on_submit=send_prompt)
 
@@ -459,17 +526,21 @@ def start_red_teaming():
     session = get_session_info(selected_session)
     chat_ids = session["session"]["chat_ids"]
 
-    tabs = st.tabs(chat_ids)
+    # hack for toxicity model not to show up
+    if "toxic" in chat_ids[-1]:
+        cols = st.columns(len(chat_ids)-1)
+    else:
+        cols = st.columns(len(chat_ids))
 
     index = 0
     history = get_chat_history()
 
-    for tab in tabs:
-        with tab:
+    for col in cols:
+        with col:
             # get chat history
+            st.subheader(f"Chat: {chat_ids[index]}", divider="rainbow")
             chat_history = history[chat_ids[index]]
             for each_turn in chat_history:
-                print(each_turn)
                 st.chat_message("assistant").write(each_turn[0])
                 st.chat_message("user").write(each_turn[1])
             
@@ -624,12 +695,12 @@ with st.sidebar:
         options = st.multiselect(
             "Select Attack Modules",
             redteaming_recipe,
-            placeholder="",
-            default=redteaming_recipe_str,
+            placeholder="Select Attack Modules",
+            # default=redteaming_recipe_str,
             key="selected_attack_modules"
         )
         
-        st.button("Automate Attacks", key="automate_attack", on_click=run_automated_attack)
+        st.button("Automate Attack", key="automate_attack", on_click=run_automated_attack)
 
         st.header("Predefined Tests", divider='rainbow')
         
@@ -648,7 +719,7 @@ with st.sidebar:
         options = st.multiselect(
             "Cookbook",
             list_of_cookbooks,
-            default=[cookbook_str],
+            # default=[cookbook_str],
             placeholder="Select Cookbooks",
             key="selected_cookbooks"
         )
