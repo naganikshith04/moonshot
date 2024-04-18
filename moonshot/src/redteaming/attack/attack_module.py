@@ -17,7 +17,7 @@ from moonshot.src.utils.import_modules import get_instance
 
 # variable to cap the number of prompts sent to the LLMs in case the stop condition
 # of the attack does not get fulfilled
-MAX_NO_ITERATIONS = 10
+MAX_NO_ITERATIONS = 5
 
 class AttackModule:
     def __init__(self, am_args: AttackModuleArguments):

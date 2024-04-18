@@ -68,6 +68,18 @@ def list_results(cookbook_ids):
         st.warning("Moonshot WebAPI is not connected.", icon="🔥")
         return results
 
+def list_connector_ids():
+    """Get a list of connceots and returns the ID as a list
+    """
+    results = []
+    try:
+        response = requests.get(f"{url}/v1/connectors/")
+        results = response.json()
+        return results
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return results
+
 def list_sessions():
     """Get a list of active sessions and returns the ID as a list
     """
@@ -96,6 +108,17 @@ def list_cookbook():
         st.warning("Moonshot WebAPI is not connected.", icon="🔥")
         return results
 
+def get_cookbook():
+    """Get a list of cookbook and its info"""
+    results = []
+    try:
+        response = requests.get(f"{url}/v1/cookbooks/")
+        results = response.json()
+        return results
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return results
+
 def list_redteaming_recipes():
     """Get a list of recipes for red teaming and returns the ID as a list"""
     results = []
@@ -103,6 +126,16 @@ def list_redteaming_recipes():
         response = requests.get(f"{url}/v1/recipes/redteaming/name")
         redteaming_recipes = response.json()
         return redteaming_recipes
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return results
+
+def get_endpoint_info(endpoint_id):
+    """Get information about an endpoint"""
+    try:
+        response = requests.get(f"{url}/v1/llm_endpoints/{endpoint_id}")
+        results = response.json()
+        return results
     except Exception:
         st.warning("Moonshot WebAPI is not connected.", icon="🔥")
         return results
@@ -299,6 +332,10 @@ def print_benchmark_results(cookbook_id, results_endpoint):
     with st.expander("See details of the results"):
         st.write(data)
 
+def print_cookbook_info():
+    cookbooks = get_cookbook()
+    st.write(cookbooks)
+
 def send_prompt():
     selected_session = st.session_state["selected_session"]
     if selected_session == None or len(selected_session) == 0:
@@ -323,6 +360,9 @@ def send_prompt():
             url = st.session_state["moonshot_fastapi"]
             response = requests.post(f"{url}/v1/sessions/{session_id}/prompt",
                                     json=payload)
+            
+            if response.status_code == 500:
+                st.error("Unable to send to your model. Please check your endpoint settings.", icon="❌")
             
             start_red_teaming()
             return response 
@@ -549,6 +589,75 @@ def start_red_teaming():
             
     st.chat_input("Type a message here...", key="main_prompt", on_submit=send_prompt)
 
+def edit_endpoint():
+    selected_endpoint = st.session_state["edit_selected_endpoint"]
+    selected_connector = st.session_state["edit_selected_connector"]
+    selected_name = st.session_state["edit_endpoint_name"]
+    selected_uri = st.session_state["edit_endpoint_uri"]
+    selected_token = st.session_state["edit_endpoint_token"]
+    selected_mcps = st.session_state["edit_mcps"]
+    selected_mc = st.session_state["edit_max_concurrency"]
+
+    # only two mandatory fields
+    if not selected_endpoint or not selected_connector or not selected_name:
+        st.warning("Cannot add an endpoint", icon="🔥")
+        return
+    
+    try:
+        payload = {
+            "connector_type": selected_connector,
+            "name": selected_name,
+            "uri": selected_uri,
+            "token": selected_token,
+            "max_calls_per_second": selected_mcps,
+            "max_concurrency": selected_mc,
+            "params": {}
+        }
+
+        response = requests.put(f"{url}/v1/llm_endpoints/{selected_endpoint}",
+                                 json=payload)
+        edit_endpoint = response.json()["message"]
+        
+        st.success(edit_endpoint)
+        return True
+    except Exception as e:
+        st.warning(e)
+        return False
+
+def add_endpoint():
+    selected_connector = st.session_state["selected_connector"]
+    selected_name = st.session_state["endpoint_name"]
+    selected_uri = st.session_state["endpoint_uri"]
+    selected_token = st.session_state["endpoint_token"]
+    selected_mcps = st.session_state["mcps"]
+    selected_mc = st.session_state["max_concurrency"]
+
+    # only two mandatory fields
+    if not selected_connector or not selected_name:
+        st.warning("Cannot add an endpoint", icon="🔥")
+        return
+
+    try:
+        payload = {
+            "connector_type": selected_connector,
+            "name": selected_name,
+            "uri": selected_uri,
+            "token": selected_token,
+            "max_calls_per_second": selected_mcps,
+            "max_concurrency": selected_mc,
+            "params": {}
+        }
+
+        response = requests.post(f"{url}/v1/llm_endpoints",
+                                 json=payload)
+        add_endpoint = response.json()["message"]
+
+        st.success(add_endpoint)
+        return True
+    except Exception:
+        st.warning("Moonshot WebAPI is not connected.", icon="🔥")
+        return False
+
 
 def run_cookbook():
     selected_session = st.session_state["selected_session"]
@@ -656,7 +765,7 @@ with st.sidebar:
     # Create a sidebar to store all the configurations
     st.title("Moonshot Lite")
 
-    tabs = st.tabs(["Run", "Settings"])
+    tabs = st.tabs(["Run", "Endpoint Settings", "Settings"])
 
     with tabs[-1]:
         st.header("Configure Moonshot Library", divider="rainbow")
@@ -664,6 +773,62 @@ with st.sidebar:
         st.text_input("FastAPI", key="moonshot_fastapi", value="http://127.0.0.1:5000")
         url = st.session_state["moonshot_fastapi"]
         st.button("Save", key="save")
+
+    with tabs[1]:
+        st.header("Create New Endpoint", divider='rainbow')
+        
+        # Select the Connector First
+        options = st.selectbox(
+            "Connector",
+            list_connector_ids(),
+            index=None,
+            key="selected_connector",
+        )
+
+        # Give it a name
+        name_endpoint = st.text_input("Name of the Endpoint*", key="endpoint_name")
+        uri = st.text_input("URI", key="endpoint_uri")
+        token = st.text_input("Token", type="password", key="endpoint_token")
+        
+        with st.expander("Advanced Settings"):
+            max_calls_per_second = st.number_input("Max API call per second", 60, key="mcps")
+            max_concurrency = st.number_input("Max Currency", 2, key="max_concurrency")
+
+        st.button("Add New Endpoint", on_click=add_endpoint, type="primary")
+
+        st.header("Edit Endpoint", divider='rainbow')
+        # Select the Connector First
+        endpoint = st.selectbox(
+            "Endpoint",
+            list_endpoints(),
+            index=None,
+            key="edit_selected_endpoint",
+        )
+
+    
+        endpoint_info = get_endpoint_info(endpoint)
+
+        if "detail" not in endpoint_info or "Failed" not in endpoint_info["detail"]:
+            connector_type = endpoint_info["connector_type"]
+            connectors = list_connector_ids()
+
+            options = st.selectbox(
+                "Connector",
+                connectors,
+                index=connectors.index(connector_type),
+                key="edit_selected_connector",
+            )
+
+            # Give it a name
+            name_endpoint = st.text_input("Name of the Endpoint*", endpoint_info["name"], key="edit_endpoint_name")
+            uri = st.text_input("URI", endpoint_info["uri"], key="edit_endpoint_uri")
+            token = st.text_input("Token", endpoint_info["token"], type="password", key="edit_endpoint_token")
+            
+            with st.expander("Advanced Settings"):
+                max_calls_per_second = st.number_input("Max API call per second", endpoint_info["max_calls_per_second"], key="edit_mcps")
+                max_concurrency = st.number_input("Max Currency", endpoint_info["max_concurrency"], key="edit_max_concurrency")
+
+        st.button("Update Endpoint", on_click=edit_endpoint, type="primary")
 
     with tabs[0]:
         st.header("Existing Test Session", divider='rainbow')
@@ -703,7 +868,8 @@ with st.sidebar:
         st.button("Automate Attack", key="automate_attack", on_click=run_automated_attack)
 
         st.header("Predefined Tests", divider='rainbow')
-        
+        st.button("View Predefined Tests", on_click=print_cookbook_info)
+
         session = st.session_state["selected_session"]
         endpoints = st.session_state["selected_endpoints"]
         endpoints_str = ", ".join(x for x in endpoints)
@@ -730,6 +896,7 @@ with st.sidebar:
 
         col1.button("Run Tests", on_click=run_cookbook)
         col2.button("View Past Results", on_click=view_results)
+        
 
         ####
         
