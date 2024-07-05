@@ -117,6 +117,8 @@ def run_cookbook(args) -> None:
     Returns:
         None
     """
+    loop = asyncio.get_event_loop()
+    cb_runner = None
     try:
         name = args.name
         cookbooks = literal_eval(args.cookbooks)
@@ -134,7 +136,6 @@ def run_cookbook(args) -> None:
         else:
             cb_runner = api_create_runner(name, endpoints)
 
-        loop = asyncio.get_event_loop()
         loop.run_until_complete(
             cb_runner.run_cookbooks(
                 cookbooks,
@@ -147,8 +148,10 @@ def run_cookbook(args) -> None:
         )
         cb_runner.close()
 
-        # Display results
         runner_runs = api_get_all_run(cb_runner.id)
+        cb_runner = None
+
+        # Display results
         result_info = runner_runs[-1].get("results")
         if result_info:
             show_cookbook_results(
@@ -156,9 +159,16 @@ def run_cookbook(args) -> None:
             )
         else:
             raise RuntimeError("no run result generated")
-
+    except KeyboardInterrupt:
+        print(
+            "[run_cookbook]: Keyboard interrupt received. Cancelling run and closing runner."
+        )
     except Exception as e:
         print(f"[run_cookbook]: {str(e)}")
+    finally:
+        if cb_runner:
+            loop.run_until_complete(cb_runner.cancel())
+            cb_runner.close()
 
 
 def update_cookbook(args) -> None:
@@ -341,7 +351,8 @@ def show_cookbook_results(cookbooks, endpoints, cookbook_results, duration):
 
     # Print run stats
     console.print(
-        f"{'='*50}\n[blue]Time taken to run: {duration}s[/blue]\n*Overall rating will be the lowest grade that the recipes have in each cookbook\n{'='*50}"
+        f"{'='*50}\n[blue]Time taken to run: {duration}s[/blue]\n*Overall rating will be the lowest grade that the "
+        f"recipes have in each cookbook\n{'='*50}"
     )
 
 

@@ -46,6 +46,7 @@ class Runner:
 
         # Set current run
         self.current_operation = None
+        self.current_operation_event = asyncio.Event()
         self.current_operation_lock = asyncio.Lock()  # Mutex lock for current operation
 
     @classmethod
@@ -308,6 +309,12 @@ class Runner:
                 self.current_operation.cancel()
                 self.current_operation = None  # Reset the current operation
 
+        # Wait for the current operation to complete
+        print(
+            f"[Runner] {self.id} - Waiting for current operation to terminate gracefully..."
+        )
+        await self.current_operation_event.wait()
+
     async def run_recipes(
         self,
         recipes: list[str],
@@ -364,6 +371,7 @@ class Runner:
                 Storage.get_filepath(EnvVariables.RESULTS.name, self.id, "json", True),
                 self.progress_callback_func,
             )
+            self.current_operation_event.clear()  # Clear the event before starting the operation
             # Note: The lock is held during setup but should be released before long-running operations
 
         # Execute the long-running operation outside of the lock
@@ -373,6 +381,7 @@ class Runner:
         # After completion, reset current_operation to None within the lock
         async with self.current_operation_lock:
             self.current_operation = None
+            self.current_operation_event.set()  # Set the event to signal completion
             print(f"[Runner] {self.id} - Benchmark recipe run completed and reset.")
 
     async def run_cookbooks(
@@ -432,6 +441,7 @@ class Runner:
                 Storage.get_filepath(EnvVariables.RESULTS.name, self.id, "json", True),
                 self.progress_callback_func,
             )
+            self.current_operation_event.clear()  # Clear the event before starting the operation
             # Note: The lock is held during setup but should be released before long-running operations
 
         # Execute the long-running operation outside of the lock
@@ -441,6 +451,7 @@ class Runner:
         # After completion, reset current_operation to None within the lock
         async with self.current_operation_lock:
             self.current_operation = None
+            self.current_operation_event.set()  # Set the event to signal completion
             print(f"[Runner] {self.id} - Benchmark cookbook run completed and reset.")
 
     async def run_red_teaming(
@@ -482,14 +493,16 @@ class Runner:
                 Storage.get_filepath(EnvVariables.RESULTS.name, self.id, "json", True),
                 self.progress_callback_func,
             )
+            self.current_operation_event.clear()  # Clear the event before starting the operation
+            # Note: The lock is held during setup but should be released before long-running operations
 
-        # Note: The lock is held during setup but should be released before long-running operations
         # Execute the long-running operation outside of the lock
         red_teaming_results = await self.current_operation.run()
 
         # After completion, reset current_operation to None within the lock
         async with self.current_operation_lock:
             self.current_operation = None
+            self.current_operation_event.set()  # Set the event to signal completion
             print(f"[Runner] {self.id} - Red teaming run completed.")
 
         return red_teaming_results

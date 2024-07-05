@@ -230,14 +230,24 @@ def manual_red_teaming(user_prompt: str) -> None:
     }
 
     # load runner, perform red teaming and close the runner
+    loop = asyncio.get_event_loop()
+    runner = None
     try:
         runner = api_load_runner(active_session["session_id"])
-        loop = asyncio.get_event_loop()
         loop.run_until_complete(runner.run_red_teaming(mrt_arguments))
         runner.close()
+        runner = None
         _reload_session(active_session["session_id"])
+    except KeyboardInterrupt:
+        print(
+            "[manual_red_teaming]: Keyboard interrupt received. Cancelling run and closing runner."
+        )
     except Exception as e:
         print(f"[manual_red_teaming]: str({e})")
+    finally:
+        if runner:
+            loop.run_until_complete(runner.cancel())
+            runner.close()
 
 
 def run_attack_module(args):
@@ -256,6 +266,8 @@ def run_attack_module(args):
     if not active_session:
         print("There is no active session. Activate a session to start red teaming.")
         return
+    loop = asyncio.get_event_loop()
+    runner = None
     try:
         attack_module_id = args.attack_module_id
         prompt = args.prompt
@@ -298,15 +310,23 @@ def run_attack_module(args):
         runner_args["attack_strategies"] = attack_strategy
 
         # load runner, perform red teaming and close the runner
-
         runner = api_load_runner(active_session["session_id"])
-        loop = asyncio.get_event_loop()
+
         loop.run_until_complete(runner.run_red_teaming(runner_args))
         runner.close()
+        runner = None
         _reload_session(active_session["session_id"])
         update_chat_display()
+    except KeyboardInterrupt:
+        print(
+            "[run_attack_module]: Keyboard interrupt received. Cancelling session and closing runner."
+        )
     except Exception as e:
         print(f"[run_attack_module]: str({e})")
+    finally:
+        if runner:
+            loop.run_until_complete(runner.cancel())
+            runner.close()
 
 
 def _reload_session(runner_id: str) -> None:
