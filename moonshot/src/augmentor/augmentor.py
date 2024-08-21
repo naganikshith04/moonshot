@@ -1,8 +1,8 @@
 # from moonshot.api import api_read_recipe,api_create_recipe,api_create_datasets,api_read_dataset
-from slugify import slugify
+import asyncio
 
+from moonshot.src.api.api_runner import api_load_runner
 from moonshot.src.datasets.dataset import Dataset
-from moonshot.src.datasets.dataset_arguments import DatasetArguments
 from moonshot.src.recipes.recipe import Recipe
 from moonshot.src.recipes.recipe_arguments import RecipeArguments
 
@@ -20,6 +20,7 @@ class Augmentor:
         Step 4. Write each new augmented dataset to a new file
         Step 5. Create new recipe with new set of datasets
         """
+        print("in augment_recipe")
         selected_recipe = Recipe.read(recipe_id)
         datasets = selected_recipe.datasets
         augmented_datasets_id = []
@@ -49,49 +50,50 @@ class Augmentor:
             raise e
 
     @staticmethod
-    def augment_dataset(dataset_id: str, attack_module: str) -> str:
-        """
-        Step 1. Get the Datasets
-        Step 2. Get the prompts
-        Step 3. Load attack module
-        Step 4. Generate new prompts
-        Step 5. Write new dataset to file
-        Step 6. Use existing license and references
-
-        Returns the new dataset id
-        """
-
-        # step 1
+    def augment_dataset(dataset_id: str, attack_module_id: str) -> str:
         dataset = Dataset.read(dataset_id)
         inputs = dataset.examples
 
-        # step 2 call AM
         new_examples = []
-        for input in inputs:
-            # prompt = input.get("input")
-            new_prompts = [
-                "new prompt 1",
-                "new prompt 2",
-                "new prompt 3",
-                "new prompt 4",
-                "new prompt 5",
-                "new prompt 6",
-            ]
-            new_examples = new_prompts
-            break
+        if inputs:
+            for input in inputs:
+                runner_args = {
+                    "attack_strategies": [
+                        {
+                            "attack_module_id": attack_module_id,
+                            "prompt": input.get(
+                                "input"
+                            ),  # Assuming the input is stored under the key "input"
+                            "context_strategy_info": [],
+                            "prompt_template_ids": [],
+                            "metric_ids": [],
+                            "optional_params": {},
+                        }
+                    ]
+                }
+                print("runner_args:", runner_args, "\n")
 
-        try:
-            new_name = f"{dataset.id}-{attack_module}"
-            new_ds_id = slugify(new_name).lower()
-            ds_args = DatasetArguments(
-                id="",
-                name=new_ds_id,
-                description=dataset.description,
-                reference=dataset.reference,
-                license=dataset.license,
-                examples=new_examples,
-            )
-            Dataset.create(ds_args)
-            return new_ds_id
-        except Exception as e:
-            raise e
+                # Load runner and run the attack module
+                runner = api_load_runner("clcc-tst")
+                loop = asyncio.get_event_loop()
+                new_prompts = loop.run_until_complete(
+                    runner.run_red_teaming(runner_args)
+                )
+                new_examples.append(new_prompts)
+        print("original dataset:", dataset)
+        print("generated dataset:", new_examples)
+        # try:
+        #     new_name = f"{dataset.id}-{attack_module_id}"
+        #     new_ds_id = slugify(new_name).lower()
+        #     ds_args = DatasetArguments(
+        #         id="",
+        #         name=new_ds_id,
+        #         description=dataset.description,
+        #         reference=dataset.reference,
+        #         license=dataset.license,
+        #         examples=new_examples,
+        #     )
+        #     Dataset.create(ds_args)
+        #     return new_ds_id
+        # except Exception as e:
+        #     raise e
