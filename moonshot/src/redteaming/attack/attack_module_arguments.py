@@ -17,7 +17,10 @@ class AttackModuleArguments(BaseModel):
     prompt_templates: list = []
 
     # user's prompt
-    prompt: str
+    prompt: str = ""
+
+    # user's dataset
+    dataset_prompts: list = []
 
     # system prompt
     system_prompt: str = ""
@@ -29,7 +32,7 @@ class AttackModuleArguments(BaseModel):
     context_strategy_info: list = []
 
     # DBAccessor for the attack module to access DB data
-    db_instance: DBInterface
+    db_instance: DBInterface | None = None
 
     # chat batch size for returning chat information by callback
     chat_batch_size: int = 0
@@ -39,6 +42,9 @@ class AttackModuleArguments(BaseModel):
 
     # an asyncio event to cancel red teaming if a cancel signal is sent
     cancel_event: asyncio.Event
+
+    # boolean to see if attack module should perform attack or augment benchmark
+    augment_dataset: bool = False
 
     # a dict that contains other params that is required by the attack module (if any)
     optional_params: dict = {}

@@ -38,12 +38,14 @@ class AttackModule:
             self.connector_ids = am_arguments.connector_ids
             self.prompt_templates = am_arguments.prompt_templates
             self.prompt = am_arguments.prompt
+            self.dataset_prompts = am_arguments.dataset_prompts
             self.system_prompt = am_arguments.system_prompt
             self.metric_ids = am_arguments.metric_ids
             self.context_strategy_info = am_arguments.context_strategy_info
             self.db_instance = am_arguments.db_instance
             self.red_teaming_progress = am_arguments.red_teaming_progress
             self.cancel_event = am_arguments.cancel_event
+            self.augment_dataset = am_arguments.augment_dataset
             self.optional_params = am_arguments.optional_params
 
     @classmethod

@@ -7,6 +7,7 @@ from typing import Callable
 from pydantic import validate_call
 from slugify import slugify
 
+from moonshot.src.augmentor.dataset_augmentation_run import DatasetAugmentationRun
 from moonshot.src.configs.env_variables import EnvVariables
 from moonshot.src.redteaming.session.session import Session
 from moonshot.src.runners.runner_arguments import RunnerArguments
@@ -497,3 +498,49 @@ class Runner:
             logger.info(f"[Runner] {self.id} - Red teaming run completed.")
 
         return red_teaming_results
+
+    async def run_augment_dataset(
+        self,
+        augment_dataset_args: dict,
+        runner_processing_module: str = "dataset_augmentation",
+    ) -> list | None:
+        """
+        Asynchronously runs a dataset augmentation session with the provided arguments.
+
+        This method is responsible for initiating a dataset augmentation session with the specified arguments.
+        It creates a new dataset augmentation session instance, configures it with the provided arguments and
+        runner processing module, and then starts the session asynchronously.
+
+        Args:
+            augment_dataset_args (dict): A dictionary of arguments for the dataset augmentation session.
+            runner_processing_module (str, optional): The processing module to be used for the session.
+            Defaults to "dataset_augmentation".
+
+        Returns:
+            list | None: The results of the dataset augmentation session, or None if an error occurs.
+
+        Raises:
+            Exception: If any error occurs during the setup or execution of the dataset augmentation session.
+        """
+        async with self.current_operation_lock:  # Acquire the lock
+            logger.info(f"[Runner] {self.id} - Running dataset augmentation...")
+            self.current_operation = DatasetAugmentationRun(
+                self.id,
+                RunnerType.DATASET_AUGMENTATION,
+                {
+                    **augment_dataset_args,
+                    "runner_processing_module": runner_processing_module,
+                },
+                self.progress_callback_func,
+            )
+
+        # Note: The lock is held during setup but should be released before long-running operations
+        # Execute the long-running operation outside of the lock
+        dataset_augmentation_results = await self.current_operation.run()
+
+        # After completion, reset current_operation to None within the lock
+        async with self.current_operation_lock:
+            self.current_operation = None
+            logger.info(f"[Runner] {self.id} - Data augmentation run completed.")
+
+        return dataset_augmentation_results
