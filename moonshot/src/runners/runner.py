@@ -283,7 +283,7 @@ class Runner:
             logger.error(f"[Runner] Failed to get available runners: {str(e)}")
             raise e
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """
         Closes the runner instance.
 

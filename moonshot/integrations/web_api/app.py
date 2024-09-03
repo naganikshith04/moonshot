@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from .container import Container
 from .routes import (
     attack_modules,
+    augmentor,
     benchmark,
     benchmark_result,
     bookmark,
@@ -71,7 +72,7 @@ def create_app(cfg: providers.Configuration) -> CustomFastAPI:
     }
 
     app: CustomFastAPI = CustomFastAPI(
-        title="Project Moonshot", version="0.4.1", **app_kwargs
+        title="Project Moonshot", version="0.4.5", **app_kwargs
     )
 
     if cfg.cors.enabled():
@@ -104,6 +105,7 @@ def create_app(cfg: providers.Configuration) -> CustomFastAPI:
     app.include_router(dataset.router)
     app.include_router(attack_modules.router)
     app.include_router(bookmark.router)
+    app.include_router(augmentor.router)
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
