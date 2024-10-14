@@ -1,5 +1,7 @@
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..container import Container
 from ..services.benchmark_result_service import BenchmarkResultService
@@ -11,6 +13,7 @@ router = APIRouter(tags=["Benchmark Results"])
 @router.get("/api/v1/benchmarks/results")
 @inject
 async def get_all_results(
+    type: Optional[str] = Query(None, description="Result type to query"),
     benchmark_result_service: BenchmarkResultService = Depends(
         Provide[Container.benchmark_result_service]
     ),
@@ -31,7 +34,7 @@ async def get_all_results(
         HTTPException: Raised if the results file cannot be found (404) or if an unspecified error occurs (500).
     """
     try:
-        results = benchmark_result_service.get_all_results()
+        results = benchmark_result_service.get_all_results(type)
         return results
     except ServiceException as e:
         if e.error_code == "FileNotFound":

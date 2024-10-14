@@ -6,8 +6,18 @@ from ..types.types import BenchmarkResult
 
 class BenchmarkResultService(BaseService):
     @exception_handler
-    def get_all_results(self) -> list[BenchmarkResult]:
-        results = moonshot_api.api_get_all_result()
+    def get_all_results(self,type: str) -> list[BenchmarkResult]:
+        if type == "cookbook":
+            retn_list = []
+            results=moonshot_api.api_get_all_result()
+            for result in results:
+                if result.get('metadata', {}).get('cookbooks') is None:
+                    continue
+                else:
+                    retn_list.append(result)
+            return [BenchmarkResult(**result) for result in retn_list]
+        else:
+            results = moonshot_api.api_get_all_result()
         return [BenchmarkResult(**result) for result in results]
 
     @exception_handler
