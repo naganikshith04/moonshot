@@ -2,8 +2,7 @@ name: Static Application Security Testing
 
 # Runs when a pull request review is being submitted
 on: 
-  push:  
-      branches: [ "coverity-workflow" ] 
+  pull_request:
 
   # Run this workflow manually from Actions tab
   workflow_dispatch:
