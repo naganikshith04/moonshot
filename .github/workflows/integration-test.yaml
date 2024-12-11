@@ -65,7 +65,7 @@ jobs:
         source venv/bin/activate
         pip install -r requirements.txt
         pip install nltk
-        python -c "import nltk; nltk.download('stopwords')"
+        python -c "import nltk; nltk.download('stopwords');nltk.download('punkt')"
         touch .env
         echo "${{ secrets.ENVIRONMENT_VARS }}" >> .env
 
