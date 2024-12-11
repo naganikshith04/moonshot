@@ -121,6 +121,8 @@ jobs:
         npm install
         npm run build
         cd ../
+        pip install nltk
+        python -m nltk.downloader punkt stopwords
         nohup python -m moonshot web &
 
     - name: Checkout Integration Test 
