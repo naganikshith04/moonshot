@@ -115,7 +115,7 @@ jobs:
     - name: Setup Moonshot UI
       run: |
         cd moonshot-ui
-        npm ci
+        npm install
         npm run build
         cd ../
         source venv/bin/activate
@@ -140,6 +140,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
       run: |
+         source venv/bin/activate
          cd moonshot-integration-testing/ui-integration-testing
          npm install --global yarn
          npm install dotenv
