@@ -144,6 +144,7 @@ jobs:
       run: |
          source venv/bin/activate
          cd moonshot-integration-testing/ui-integration-testing
+         npx playwright install-deps
          npm ci
          npx playwright install
          npm install dotenv --save
