@@ -121,7 +121,7 @@ jobs:
         npm run build
         cd ../
         source venv/bin/activate
-        python -m moonshot web &
+        nohup python -m moonshot web &
 
     - name: Checkout Integration Test 
       uses: actions/checkout@v4
