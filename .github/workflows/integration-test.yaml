@@ -123,8 +123,7 @@ jobs:
         cd ../
         pip install nltk
         python -m nltk.downloader punkt stopwords
-        nohup python -m moonshot web > my_process.log &
-        tail -f my_process.log
+        nohup python -m moonshot web &
 
     - name: Checkout Integration Test 
       uses: actions/checkout@v4
@@ -152,7 +151,7 @@ jobs:
          npx playwright install
          npm install dotenv --save
          URI="$URI" TOKEN="$TOKEN" URI2="$URI2" TOKEN2="$TOKEN2" ADDITIONAL_PARAMETERS="$ADDITIONAL_PARAMETERS" TOGETHER_TOKEN="$TOGETHER_TOKEN" OPENAI_TOKEN="$OPENAI_TOKEN" AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" GOOGLE_TOKEN="$GOOGLE_TOKEN" DEBUG=pw:api npx playwright test tests/red_teaming.spec.ts
-         cat my_process.log
+
          
     - name: Upload Playwright Traces
       if: always()
