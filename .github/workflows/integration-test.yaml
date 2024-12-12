@@ -160,6 +160,9 @@ jobs:
           name: playwright-trace
           path: |
             test-results
+          run: |
+            ls
+            pwd
             
     - name: TestRail CLI upload results
       env:
