@@ -70,12 +70,14 @@ jobs:
     - name: Checkout Moonshot Data
       if: github.event_name == 'workflow_dispatch'
       run: |
+         source venv/bin/activate
          python -m moonshot -i moonshot-data -u
          git checkout ${{ inputs.moonshot_data_branch }}
 
     - name: Checkout Moonshot UI
       if: github.event_name == 'workflow_dispatch'
       run: |
+        source venv/bin/activate
         python -m moonshot -i moonshot-ui -u
         git checkout ${{ inputs.moonshot_ui_branch }}
 
