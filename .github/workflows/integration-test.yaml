@@ -124,7 +124,10 @@ jobs:
         pip install nltk
         python -m nltk.downloader punkt stopwords
         nohup python -m moonshot web &
-
+        while true; do
+          echo "Background service is running at $(date)" >> service.log
+          sleep 5
+        done &
     - name: Checkout Integration Test 
       uses: actions/checkout@v4
       with:
@@ -151,7 +154,9 @@ jobs:
          npx playwright install
          npm install dotenv --save
          URI="$URI" TOKEN="$TOKEN" URI2="$URI2" TOKEN2="$TOKEN2" ADDITIONAL_PARAMETERS="$ADDITIONAL_PARAMETERS" TOGETHER_TOKEN="$TOGETHER_TOKEN" OPENAI_TOKEN="$OPENAI_TOKEN" AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" GOOGLE_TOKEN="$GOOGLE_TOKEN" DEBUG=pw:api npx playwright test tests/red_teaming.spec.ts
-    
+         cd ../
+         cat service.log
+         
     - name: Upload Playwright Traces
       uses: actions/upload-artifact@v4
       with:
