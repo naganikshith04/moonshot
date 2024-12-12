@@ -66,44 +66,18 @@ jobs:
         pip install -r requirements.txt
         touch .env
         echo "${{ secrets.ENVIRONMENT_VARS }}" >> .env
-
-    - name: Checkout Moonshot Data (Pull Request Review)
-      if: github.event_name == 'pull_request_review'
-      uses: actions/checkout@v4
-      with: 
-         repository: aiverify-foundation/moonshot-data
-         ref: ${{ vars.MOONSHOT_DATA_BRANCH }}
-         path: moonshot-data
-
-    - name: Checkout Moonshot Data (Workflow Dispatch)
+        
+    - name: Checkout Moonshot Data
       if: github.event_name == 'workflow_dispatch'
-      uses: actions/checkout@v4
-      with: 
-         repository: aiverify-foundation/moonshot-data
-         ref: ${{ inputs.moonshot_data_branch }}
-         path: moonshot-data
-
-    - name: Setup Moonshot Data
       run: |
-        source venv/bin/activate
-        cd moonshot-data
-        pip install -r requirements.txt
+         python -m moonshot -i moonshot-data -u
+         git checkout ${{ inputs.moonshot_data_branch }}
 
-    - name: Checkout Moonshot UI (Pull Request Review)
-      if: github.event_name == 'pull_request_review'
-      uses: actions/checkout@v4
-      with:
-        repository: aiverify-foundation/moonshot-ui
-        ref: ${{ vars.MOONSHOT_UI_BRANCH }}
-        path: moonshot-ui
-
-    - name: Checkout Moonshot UI (Workflow Dispatch)
+    - name: Checkout Moonshot UI
       if: github.event_name == 'workflow_dispatch'
-      uses: actions/checkout@v4
-      with:
-        repository: aiverify-foundation/moonshot-ui
-        ref: ${{ inputs.moonshot_ui_branch }}
-        path: moonshot-ui
+      run: |
+        python -m moonshot -i moonshot-ui -u
+        git checkout ${{ inputs.moonshot_ui_branch }}
 
      # Download NLTK stopwords
     - name: Download NLTK stopwords
