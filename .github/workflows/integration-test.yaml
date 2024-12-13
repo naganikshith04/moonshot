@@ -53,11 +53,11 @@ jobs:
       with:
           repository: aiverify-foundation/moonshot
           ref: ${{ inputs.moonshot_branch }}
-    
-    - name: Set up Python 3.11.9
-      uses: actions/setup-python@v2
+          
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11.9'
+          python-version: '3.11'
     
     - name: Setup Moonshot
       run: |
